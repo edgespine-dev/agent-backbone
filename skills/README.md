@@ -64,3 +64,38 @@ The catalog can be bound to Policier documents as an example, but this is option
 - `<project>/PLANS/testing/test_policy.md`
 - `<project>/PLANS/testing/nonfunctional_policy.md`
 - `<project>/PLANS/testing/ai_code_safety_policy.md`
+
+## Install for Codex and Claude
+Use installer entrypoints so the same catalog works across agent runtimes.
+
+### Codex (`SKILL.md` wrappers)
+Generate local Codex skill wrappers:
+
+```bash
+cd /home/esadmin/agent-backbone
+./scripts/codex_install.sh
+```
+
+Options:
+- `--dest <path>`: custom destination instead of `${CODEX_HOME:-$HOME/.codex}/skills`
+- `--prefix <text>`: prefix generated skill names to avoid collisions
+- `--no-router`: skip the top-level `agent-backbone-catalog-router` skill
+- `--dry-run`: preview generated wrappers without writing files
+
+Then restart Codex so the new skills are discovered.
+
+### Claude Code (slash-command wrappers)
+Generate Claude slash-command wrappers under `~/.claude/commands/agent-backbone`:
+
+```bash
+cd /home/esadmin/agent-backbone
+./scripts/claude_install.sh
+```
+
+Options:
+- `--dest <path>`: custom Claude command directory
+- `--prefix <text>`: command prefix (default `ab-`)
+- `--no-router`: skip router command
+- `--dry-run`: preview generated command files without writing
+
+Then restart Claude Code session so new commands are discovered.
