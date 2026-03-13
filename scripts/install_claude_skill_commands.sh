@@ -93,6 +93,7 @@ Skill directories:
 - \`$repo_root/skills/deterministic/\`
 - \`$repo_root/skills/stochastic/\`
 - \`$repo_root/skills/orchestration/\`
+- \`$repo_root/skills/k8s/edgespine/\`
 
 Routing rules:
 1. Classify request by oracle type and ownership.
@@ -151,8 +152,13 @@ main() {
   while IFS= read -r file; do
     skill_files+=("$file")
   done < <(
-    find "$catalog_root/deterministic" "$catalog_root/stochastic" "$catalog_root/orchestration" \
-      -maxdepth 1 -type f -name '*.md' | sort
+    {
+      find "$catalog_root/deterministic" "$catalog_root/stochastic" "$catalog_root/orchestration" \
+        -maxdepth 1 -type f -name '*.md' 2>/dev/null
+      if [[ -d "$catalog_root/k8s/edgespine" ]]; then
+        find "$catalog_root/k8s/edgespine" -type f -name '*.md'
+      fi
+    } | sort
   )
 
   if [[ ${#skill_files[@]} -eq 0 ]]; then

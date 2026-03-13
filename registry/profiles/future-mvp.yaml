@@ -1,0 +1,5 @@
+schema_version: 1.0.0
+profile: future-mvp
+skills:
+  - iot/embedded/esp32-embedded-runner
+  - testing/sigrid/sigrid-test-runner

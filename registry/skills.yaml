@@ -1,0 +1,111 @@
+schema_version: 1.0.0
+skills:
+  - canonical_id: k8s/edgespine/edgespine-deployment-router
+    name: edgespine-deployment-router
+    status: domain
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/edgespine-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/k8s/edgespine/edgespine-deployment-router.md
+    domain: k8s
+    install_profiles:
+      - k8s
+      - full
+
+  - canonical_id: k8s/edgespine/edgespine-runtime-debug-readonly
+    name: edgespine-runtime-debug-readonly
+    status: domain
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/edgespine-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/k8s/edgespine/edgespine-runtime-debug-readonly.md
+    domain: k8s
+    install_profiles:
+      - k8s
+      - full
+
+  - canonical_id: k8s/edgespine/edgespine-argo-gitops-triage
+    name: edgespine-argo-gitops-triage
+    status: domain
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/edgespine-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/k8s/edgespine/edgespine-argo-gitops-triage.md
+    domain: k8s
+    install_profiles:
+      - k8s
+      - full
+
+  - canonical_id: k8s/edgespine/edgespine-overlay-and-placement-review
+    name: edgespine-overlay-and-placement-review
+    status: domain
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/edgespine-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/k8s/edgespine/edgespine-overlay-and-placement-review.md
+    domain: k8s
+    install_profiles:
+      - k8s
+      - full
+
+  - canonical_id: k8s/edgespine/edgespine-secrets-and-db-wiring-review
+    name: edgespine-secrets-and-db-wiring-review
+    status: domain
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/edgespine-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/k8s/edgespine/edgespine-secrets-and-db-wiring-review.md
+    domain: k8s
+    install_profiles:
+      - k8s
+      - full
+
+  - canonical_id: k8s/edgespine/edgespine-storage-policy-review
+    name: edgespine-storage-policy-review
+    status: domain
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/edgespine-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/k8s/edgespine/edgespine-storage-policy-review.md
+    domain: k8s
+    install_profiles:
+      - k8s
+      - full
+
+  - canonical_id: iot/embedded/esp32-embedded-runner
+    name: esp32-embedded-runner
+    status: experimental
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/embedded-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/iot/esp32-embedded-runner.md
+    domain: iot
+    install_profiles:
+      - future-mvp
+
+  - canonical_id: testing/sigrid/sigrid-test-runner
+    name: sigrid-test-runner
+    status: experimental
+    type: runtime_skill
+    owners:
+      - github:bakerlabs/testing-maintainers
+    source_of_truth:
+      repo_id: agent-backbone
+      repo_path: skills/testing/sigrid-test-runner.md
+    domain: testing
+    install_profiles:
+      - future-mvp

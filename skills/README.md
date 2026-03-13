@@ -15,6 +15,7 @@ It is designed for systems with:
 - `deterministic/`: deterministic shell verification skills
 - `stochastic/`: semantic and probabilistic evaluation skills
 - `orchestration/`: planning and delivery coordination skills
+- `k8s/`: domain skills (pilot: EdgeSpine)
 - `references/`: shared catalog-level references and vocabulary
 
 ## How to bind the catalog to a project
