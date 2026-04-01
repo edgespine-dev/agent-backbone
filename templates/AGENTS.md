@@ -29,12 +29,33 @@ Use this as a reusable default for repositories that want a compact, implementat
 - no speculative abstractions
 - keep changes small and reviewable
 
-## Workflow
+# Workflow
 
-- For multi-step or non-trivial tasks, write a short plan.
-- Implement one step at a time.
+- For multi-step or non-trivial tasks:
+  - Write a short sprint plan first.
+- Each sprint is a **small, testable feature slice**, not an arbitrary step.
+- Each sprint is defined by a test case written first.
+- Implement one sprint at a time.
 - Do not restate the full plan in chat.
 - Read only the files needed to complete the task safely.
+
+## Sprint and testing model
+
+- Sprints are defined along **behavioral or API boundaries**.
+- Tests exist to freeze understanding, not to maximize coverage.
+- Prefer concrete, behavior-verifying tests.
+- Do NOT mock unless explicitly required.
+
+Early-stage work:
+- Very low-level or implementation-coupled tests are allowed.
+- Such tests may be temporary.
+
+As APIs stabilize:
+- Trivial or redundant low-level tests SHOULD be removed.
+- Long-lived tests should focus on API contracts, boundaries, and integration behavior.
+
+Obsolete tests are technical debt.
+Agents SHOULD propose removal when appropriate.
 
 ## Planning model
 
@@ -57,26 +78,26 @@ Rules:
 Example lightweight structure:
 
 ```text
-ADM/
-  PLANS/<feature>.md
-  IMPL/<feature>-sprint-XX.md
+satellite/ # agent working notes
+└── .notes/
+    └── <feature>/
+      ├── PLAN
+      │   ├── 00_overview.md
+      │   ├── 10_implementation_sprint.md  
+      │   ├── 20_test_plan.md
+      │   ├── 30_risks_and_assumptions.md
+      │   └── 99_open_questions.md  
+      └── IMPL
+          └── <feature>-sprint-XX.md
 ```
 
 - `PLAN` = scope + constraints + next step
 - `IMPL` = what changed + checks
 - keep both terse
-- update `PLAN` only on scope change
+- update `PLAN` only on scope change and keep it consistent with the human authoritative plan in plans/<feature>_PLAN.md if it exists
+- update `IMPL` on every implementation change, even if the plan is unchanged, to keep a running log of what was done and why 
 
-Example satellite note structure:
-
-```text
-satellite/.notes/<feature>/
-├── 00_overview.md
-├── 10_implementation_steps.md
-├── 20_test_plan.md
-├── 30_risks_and_assumptions.md
-└── 99_open_questions.md
-```
+ 
 
 ## Editing rules
 
