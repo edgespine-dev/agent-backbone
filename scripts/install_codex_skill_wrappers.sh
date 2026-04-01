@@ -12,6 +12,8 @@ Options:
   --dest PATH       Destination skills directory.
                     Default: ${CODEX_HOME:-$HOME/.codex}/skills
   --prefix STR      Prefix for generated skill names (default: empty).
+  --profile NAME    Install only skills listed in registry/profiles/NAME.yaml.
+  --list-profiles   Print available registry profiles and exit.
   --no-router       Do not generate the catalog router skill.
   --dry-run         Print planned writes without changing files.
   -h, --help        Show this help text.
@@ -44,6 +46,59 @@ yaml_quote() {
   value="${value//\\/\\\\}"
   value="${value//\"/\\\"}"
   printf '"%s"' "$value"
+}
+
+manifest_skill_names() {
+  local manifest_path="$1"
+  [[ -f "$manifest_path" ]] || return 0
+
+  awk -F '\t' '
+    $1 != "generated_at" && $1 != "repo_root" && $1 != "dest_root" && NF >= 2 {
+      print $1
+    }
+  ' "$manifest_path"
+}
+
+list_profiles() {
+  local profiles_dir="$1"
+  if [[ ! -d "$profiles_dir" ]]; then
+    echo "No profiles directory found: $profiles_dir" >&2
+    return 1
+  fi
+
+  find "$profiles_dir" -maxdepth 1 -type f -name '*.yaml' -print \
+    | sort \
+    | while IFS= read -r file; do
+        basename "${file%.yaml}"
+      done
+}
+
+profile_skill_ids() {
+  local profile_file="$1"
+  awk '
+    /^skills:[[:space:]]*$/ { in_skills = 1; next }
+    in_skills && /^[^[:space:]-]/ { exit }
+    in_skills && /^[[:space:]]*-[[:space:]]*/ {
+      line = $0
+      sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+      print line
+    }
+  ' "$profile_file"
+}
+
+repo_path_for_skill_id() {
+  local registry_file="$1"
+  local target_id="$2"
+  awk -v target_id="$target_id" '
+    $1 == "-" && $2 == "canonical_id:" {
+      current = $3
+      next
+    }
+    current == target_id && $1 == "repo_path:" {
+      print $2
+      exit
+    }
+  ' "$registry_file"
 }
 
 write_wrapper() {
@@ -105,14 +160,18 @@ EOF
 }
 
 main() {
-  local script_dir repo_root catalog_root dest_root prefix install_router dry_run
+  local script_dir repo_root catalog_root dest_root prefix install_router dry_run profile_name list_profiles_only registry_dir registry_file
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   repo_root="$(cd "$script_dir/.." && pwd)"
   catalog_root="$repo_root/skills"
+  registry_dir="$repo_root/registry/profiles"
+  registry_file="$repo_root/registry/skills.yaml"
   dest_root="${CODEX_HOME:-$HOME/.codex}/skills"
   prefix=""
   install_router=1
   dry_run=0
+  profile_name=""
+  list_profiles_only=0
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -123,6 +182,14 @@ main() {
       --prefix)
         prefix="$2"
         shift 2
+        ;;
+      --profile)
+        profile_name="$2"
+        shift 2
+        ;;
+      --list-profiles)
+        list_profiles_only=1
+        shift
         ;;
       --no-router)
         install_router=0
@@ -144,26 +211,52 @@ main() {
     esac
   done
 
+  if [[ $list_profiles_only -eq 1 ]]; then
+    list_profiles "$registry_dir"
+    return 0
+  fi
+
   if [[ ! -d "$catalog_root" ]]; then
     echo "Catalog not found: $catalog_root" >&2
     return 1
   fi
 
   local -a skill_files=()
-  while IFS= read -r file; do
-    skill_files+=("$file")
-  done < <(
-    {
-      find "$catalog_root/deterministic" "$catalog_root/stochastic" "$catalog_root/orchestration" \
-        -maxdepth 1 -type f -name '*.md' 2>/dev/null
-      if [[ -d "$catalog_root/k8s/edgespine" ]]; then
-        find "$catalog_root/k8s/edgespine" -type f -name '*.md'
-      fi
-    } | sort
-  )
+  if [[ -n "$profile_name" ]]; then
+    local profile_file
+    profile_file="$registry_dir/$profile_name.yaml"
+    [[ -f "$profile_file" ]] || {
+      echo "Unknown profile: $profile_name" >&2
+      return 1
+    }
+    [[ -f "$registry_file" ]] || {
+      echo "Registry not found: $registry_file" >&2
+      return 1
+    }
+
+    while IFS= read -r skill_id; do
+      [[ -n "$skill_id" ]] || continue
+      local repo_path
+      repo_path="$(repo_path_for_skill_id "$registry_file" "$skill_id")"
+      [[ -n "$repo_path" ]] || {
+        echo "Skill id missing from registry: $skill_id" >&2
+        return 1
+      }
+      skill_files+=("$repo_root/$repo_path")
+    done < <(profile_skill_ids "$profile_file")
+  else
+    while IFS= read -r file; do
+      skill_files+=("$file")
+    done < <(
+      find "$catalog_root" -type f -name '*.md' \
+        ! -path '*/references/*' \
+        ! -path '*/README.md' \
+        | sort
+    )
+  fi
 
   if [[ ${#skill_files[@]} -eq 0 ]]; then
-    echo "No skill markdown files found under $catalog_root." >&2
+    echo "No installable skill markdown files found." >&2
     return 1
   fi
 
@@ -173,6 +266,13 @@ main() {
 
   local manifest_path="$dest_root/.agent-backbone-wrappers.tsv"
   local -a manifest_lines=()
+  local -a previous_names=()
+  local -a current_names=()
+
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    previous_names+=("$name")
+  done < <(manifest_skill_names "$manifest_path")
 
   local created=0
   for source_file in "${skill_files[@]}"; do
@@ -184,6 +284,7 @@ main() {
     [[ -n "$canonical_desc" ]] || canonical_desc="Pointer wrapper for $canonical_name from agent-backbone catalog."
 
     skill_name="${prefix}${canonical_name}"
+    current_names+=("$skill_name")
     wrapper_dir="$dest_root/$skill_name"
     wrapper_path="$wrapper_dir/SKILL.md"
     marker_path="$wrapper_dir/.agent-backbone-wrapper"
@@ -203,6 +304,7 @@ main() {
   if [[ $install_router -eq 1 ]]; then
     local router_name router_dir router_path router_marker
     router_name="${prefix}agent-backbone-catalog-router"
+    current_names+=("$router_name")
     router_dir="$dest_root/$router_name"
     router_path="$router_dir/SKILL.md"
     router_marker="$router_dir/.agent-backbone-wrapper"
@@ -219,8 +321,41 @@ main() {
   fi
 
   if [[ $dry_run -eq 1 ]]; then
+    if [[ ${#previous_names[@]} -gt 0 ]]; then
+      for old_name in "${previous_names[@]}"; do
+        local keep=0
+        for current_name in "${current_names[@]}"; do
+          if [[ "$old_name" == "$current_name" ]]; then
+            keep=1
+            break
+          fi
+        done
+        if [[ $keep -eq 0 ]]; then
+          echo "DRY-RUN remove stale wrapper: $dest_root/$old_name"
+        fi
+      done
+    fi
     echo "DRY-RUN complete. Wrappers planned: $created"
     return 0
+  fi
+
+  if [[ ${#previous_names[@]} -gt 0 ]]; then
+    for old_name in "${previous_names[@]}"; do
+      local keep=0
+      for current_name in "${current_names[@]}"; do
+        if [[ "$old_name" == "$current_name" ]]; then
+          keep=1
+          break
+        fi
+      done
+      if [[ $keep -eq 0 ]]; then
+        local stale_dir="$dest_root/$old_name"
+        local stale_marker="$stale_dir/.agent-backbone-wrapper"
+        if [[ -f "$stale_marker" ]]; then
+          rm -rf "$stale_dir"
+        fi
+      fi
+    done
   fi
 
   {
@@ -234,6 +369,7 @@ main() {
 
   echo "Installed $created wrappers under: $dest_root"
   echo "Manifest: $manifest_path"
+  echo "Re-running this command is safe; stale generated wrappers are pruned."
   echo "Restart Codex to pick up newly installed skills."
 }
 

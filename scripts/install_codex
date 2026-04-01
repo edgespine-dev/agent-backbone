@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+case " $* " in
+  *" --profile "*|*" --list-profiles "*|*" -h "*|*" --help "*)
+    exec "$script_dir/codex_install.sh" "$@"
+    ;;
+esac
+
+exec "$script_dir/codex_install.sh" --profile team-default "$@"

@@ -1,6 +1,14 @@
-# Migration scripts
+# Migration Scripts
 
-This folder is reserved for migration helpers.
-Current migration entrypoints are executed from:
+`scripts/migrate/` is reserved for migration helpers.
+
+## Current entrypoints
+
 - `../verify_pilot_edgespine.sh`
-- install wrappers in `../install/`
+- `../verify/edgespine_migration.sh`
+- install-related wrappers under `../install/`
+
+## Rule
+
+Keep migration helpers here only when they are repository-maintained operational
+entrypoints. Do not use this directory for planning notes.

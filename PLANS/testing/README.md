@@ -1,11 +1,21 @@
 # Testing Policy Binding
 
-`agent-backbone` does not keep project-specific copies of testing policy documents.
+This repository keeps shared policy documents under `policies/`.
 
-Bind these from the consuming project repository instead, for example:
+## Use
+
+Bind a consuming repository to its own testing-policy location, for example:
+
 - `<project>/PLANS/testing/test_policy.md`
 - `<project>/PLANS/testing/nonfunctional_policy.md`
 - `<project>/PLANS/testing/ai_code_safety_policy.md`
 
-Current canonical source for the Policier example (in this workspace):
-- `policier_example/PLANS/testing/`
+Required distinction:
+
+- shared policy source lives in `agent-backbone/policies/`
+- project-local binding lives in the consuming repository
+
+## Boundary
+
+Do not store consuming-project testing policy in `agent-backbone/PLANS/testing/`
+unless the task is specifically about this repository itself.

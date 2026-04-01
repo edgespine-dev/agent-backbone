@@ -64,25 +64,30 @@ for profile in k8s full legacy; do
   done
 done
 
-for wrapper in \
-  /home/esadmin/bakerlabs-k8s/skills/edgespine/deployment/edgespine-argo-gitops-triage/SKILL.md \
-  /home/esadmin/bakerlabs-k8s/skills/edgespine/deployment/edgespine-deployment-router/SKILL.md \
-  /home/esadmin/bakerlabs-k8s/skills/edgespine/deployment/edgespine-overlay-and-placement-review/SKILL.md \
-  /home/esadmin/bakerlabs-k8s/skills/edgespine/deployment/edgespine-runtime-debug-readonly/SKILL.md \
-  /home/esadmin/bakerlabs-k8s/skills/edgespine/policy/edgespine-secrets-and-db-wiring-review/SKILL.md \
-  /home/esadmin/bakerlabs-k8s/skills/edgespine/policy/edgespine-storage-policy-review/SKILL.md
- do
-  [[ -f "$wrapper" ]] || { echo "missing compatibility wrapper: $wrapper" >&2; exit 1; }
-  if ! rg -q "Compatibility wrapper for migration|Generated pointer wrapper to the canonical agent-backbone skill" "$wrapper"; then
-    echo "wrapper missing compatibility marker: $wrapper" >&2
-    exit 1
-  fi
-  skill_name="$(basename "$(dirname "$wrapper")")"
-  rg -q "/home/esadmin/agent-backbone/skills/k8s/edgespine/${skill_name}.md" "$wrapper" || {
-    echo "wrapper missing canonical target: $wrapper" >&2
-    exit 1
-  }
-done
+compat_repo="${BAKERLABS_K8S_REPO:-$repo_root/../bakerlabs-k8s}"
+if [[ -d "$compat_repo/skills/edgespine" ]]; then
+  for wrapper in \
+    "$compat_repo/skills/edgespine/deployment/edgespine-argo-gitops-triage/SKILL.md" \
+    "$compat_repo/skills/edgespine/deployment/edgespine-deployment-router/SKILL.md" \
+    "$compat_repo/skills/edgespine/deployment/edgespine-overlay-and-placement-review/SKILL.md" \
+    "$compat_repo/skills/edgespine/deployment/edgespine-runtime-debug-readonly/SKILL.md" \
+    "$compat_repo/skills/edgespine/policy/edgespine-secrets-and-db-wiring-review/SKILL.md" \
+    "$compat_repo/skills/edgespine/policy/edgespine-storage-policy-review/SKILL.md"
+  do
+    [[ -f "$wrapper" ]] || { echo "missing compatibility wrapper: $wrapper" >&2; exit 1; }
+    if ! rg -q "Compatibility wrapper for migration|Generated pointer wrapper to the canonical agent-backbone skill" "$wrapper"; then
+      echo "wrapper missing compatibility marker: $wrapper" >&2
+      exit 1
+    fi
+    skill_name="$(basename "$(dirname "$wrapper")")"
+    rg -q "skills/k8s/edgespine/${skill_name}.md" "$wrapper" || {
+      echo "wrapper missing canonical target: $wrapper" >&2
+      exit 1
+    }
+  done
+else
+  echo "compatibility wrapper check skipped: no sibling bakerlabs-k8s skills repo at $compat_repo"
+fi
 
 codex_dry_run="$(cd "$repo_root" && ./scripts/codex_install.sh --dry-run)"
 claude_dry_run="$(cd "$repo_root" && ./scripts/claude_install.sh --dry-run)"
